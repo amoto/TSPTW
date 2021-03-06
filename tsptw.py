@@ -107,11 +107,9 @@ def build_greedy(iteration: int):
     prev = 0
     elapsed = 0
     for i in range(1, N):
-        '''consider using heapq'''
         possible = []
         for j in range(1, N):
             if prev != j and j not in path:
-                '''use or not elapsed?'''
                 possible.append((max(GRAPH[prev][j], SCHEDULES[j][0]), j))
         possible.sort()
         taken = 0
@@ -235,16 +233,11 @@ def solve_case(case: str):
     MAX_ITER = (N * (N-1))//2
     best_i, best_path, best_elapsed, best_overused, best_total = vns(MAX_ITER * 5)
     end = datetime.now()
-    #optimal_path = load_expected(case)
-    #optimal_elapsed, optimal_over, optimal_total = calculate_path_cost(optimal_path[1])
     if best_overused == 0.0:
         print('{:20} | {:131} | {:20}'.format('case', 'path', 'cost'))
         print('{:20} | {:131} | {:20}'.format(case, str(best_path)[1:-1], best_total))
-        #print('{} & ${}$ & ${:10.2f}$ & ${:10.2f}$ & ${:10.2f}$\\\\'.format(case.replace('_', '\\_'), N, (end - START).total_seconds(), best_total, best_total - optimal_total))
     else:
         print('no feasible solution found')
-        #print('{} & ${}$ & ${:10.2f}$ & {} & {}\\\\'.format(case.replace('_', '\\_'), N, (end - START).total_seconds(), 'no encontrado', 'no encontrado'))
-    #print('\hline')
     return best_overused == 0.0
 
 def solve_all():
