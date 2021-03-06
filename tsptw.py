@@ -47,10 +47,9 @@ def calculate_path_cost(path: list):
     total = 0
     for i in range(1, len(path)):
         curr = path[i]
-        #print('prev {} curr {} cost {} elapsed {} schedules {}'.format(prev, curr, GRAPH[prev][curr], elapsed, SCHEDULES[curr]))
         elapsed = max(elapsed + GRAPH[prev][curr], SCHEDULES[curr][0])
         if elapsed > SCHEDULES[curr][1]:
-            overused += 1 #(elapsed - SCHEDULES[curr][1])
+            overused += 1
         total += GRAPH[prev][curr]
         prev = curr
     return elapsed, overused, total
@@ -68,7 +67,7 @@ def calculate_path_cost_print(path: list):
         print('prev {} curr {} cost {} elapsed {} schedules {}'.format(prev, curr, GRAPH[prev][curr], elapsed, SCHEDULES[curr]))
         elapsed = max(elapsed + GRAPH[prev][curr], SCHEDULES[curr][0])
         if elapsed > SCHEDULES[curr][1]:
-            overused += 1 #(elapsed - SCHEDULES[curr][1])
+            overused += 1 
         total += GRAPH[prev][curr]
         prev = curr
     return elapsed, overused, total
@@ -104,7 +103,6 @@ def calculate_level_and_deviation(m: int):
 def build_greedy(iteration: int):
     global N, GRAPH, SCHEDULES
     level, deviation = calculate_level_and_deviation(iteration)
-    #print(level, deviation)
     path = [0]
     prev = 0
     elapsed = 0
@@ -119,7 +117,6 @@ def build_greedy(iteration: int):
         taken = 0
         if i - 1 == level:
             taken = deviation
-        #print('greedy building level {} deviation {} iteration {} ')
         path.append(possible[taken][1])
         prev = path[-1]
         elapsed += possible[taken][0]
@@ -136,7 +133,6 @@ def two_opt(path: list):
         for k in range(i+1, len(path)-1):
             new_path = two_opt_swap(path, i, k)
             new_elapsed, new_error, new_total = calculate_path_cost(new_path)
-            #print('two opt new path {} elapsed {}, error {}, total {}'.format(new_path, new_elapsed, new_error, new_total))
             if (new_error <= best_error and new_total < best_total):
                 best_elapsed, best_error, best_total, best_path = new_elapsed, new_error, new_total, new_path
     return best_path
@@ -153,11 +149,10 @@ def print_graph():
 
 def vns(m: int):
     global N, MAX_ITER, START, TIMEOUT
-    #fallbacks = [build_opening_greedy, build_reverse_greedy]
     best_path, best_i = build_base_greedy(), 0
     best_elapsed, best_overused, best_total = calculate_path_cost(best_path)
     fallback_level = 1
-    max_fallback_level = MAX_ITER #len(fallbacks)
+    max_fallback_level = MAX_ITER
     used = {}
     for i in range(m):
         path =  best_path
@@ -172,16 +167,12 @@ def vns(m: int):
             break
         used[path_tp] = True
         elapsed, overused, total = calculate_path_cost(path)
-        #print('greedy seed path v {} {} elapsed {:10.2f}, error {:10.2f}, total {:10.2f}'.format(i, path, elapsed, overused, total))
         new_path = two_opt(path)
         new_elapsed, new_overused, new_total = calculate_path_cost(new_path)
-        #print('two opt path v {} {} elapsed {:10.2f}, error {:10.2f}, total {:10.2f}'.format(i, new_path, new_elapsed, new_overused, new_total))
         
         if (new_overused <= best_overused and new_total < best_total):
             best_path, best_elapsed, best_overused, best_total, best_i = new_path, new_elapsed, new_overused, new_total, i
-        #else:
-            #break
-    #print('vns finished, best path found on iteration {}, path {}, elapsed {:10.2f}, error {:10.2f}, total {:10.2f}'.format(best_i, best_path, best_elapsed, best_overused, best_total))
+
     return best_i, best_path, best_elapsed, best_overused, best_total
 
 def d_t(i: int, j: int, t: float):
@@ -200,16 +191,12 @@ def preprocessing():
                                 min(SCHEDULES[i][1], 
                                     min([d_t(j, i, SCHEDULES[j][0]) if j != i else SCHEDULES[i][1] for j in range(0, N)]))), 
                             SCHEDULES[i][1])
-            #if original != SCHEDULES[i]:
-                #print('changed schedules for {}, original {}, new {}'.format(i, original, SCHEDULES[i]))
             changed |= original != SCHEDULES[i]
-        #print('schedules changed', changed)
         for i in range(1, N):
             for j in range(0, N):
                 if i != j:
                     if d_t(i, j, SCHEDULES[i][0]) > SCHEDULES[j][1]:
                         if GRAPH[i][j] != float('inf'):
-                            #print('killed edge {} {} original value {} schedules i {}, schedules j {}'.format(i, j, GRAPH[i][j], SCHEDULES[i], SCHEDULES[j]))
                             changed |= True
                             GRAPH[i][j] = float('inf')
                             P.add((j, i))
@@ -220,21 +207,19 @@ def preprocessing():
                 prescedence2 = True
                 for k in range(1, N):
                     if k != i and k != j:
-                        prescedence &= d_t(j, k, d_t(i, j, SCHEDULES[i][0])) > SCHEDULES[k][1] and d_t(i, j, d_t(k, i, SCHEDULES[k][0])) > SCHEDULES[j][1] #and d_t(k, j, d_t(i, k, SCHEDULES[i][0])) > SCHEDULES[j][1]
+                        prescedence &= d_t(j, k, d_t(i, j, SCHEDULES[i][0])) > SCHEDULES[k][1] and d_t(i, j, d_t(k, i, SCHEDULES[k][0])) > SCHEDULES[j][1]
                         prescedence2 &= prescedence and d_t(k, j, d_t(i, k, SCHEDULES[i][0])) > SCHEDULES[j][1]
                 if prescedence and GRAPH[i][j] != float('inf'):
                     GRAPH[i][j] = float('inf')
                     changed |= True
                 if prescedence2:
                     P.add((j, i))
-                    #print('killed edge {} {} original value {} all bridges are impossible'.format(i, j, GRAPH[i][j]))
     for i in range(1, N):
         for j in range(1, N):
             if i != j and GRAPH[j][i] == float('inf'):
                 for k in range(1, N):
                     if k != i and k != j:
                         if GRAPH[k][j] == float('inf') and GRAPH[k][i] != float('inf'):
-                            #print('killed edge {} {} original value {} by transitivity with'.format(k, i, j, GRAPH[k][i]))
                             GRAPH[k][i] = float('inf')
                             P.add((i, k))
     for edge in P:
@@ -245,23 +230,21 @@ def solve_case(case: str):
     global N, MAX_ITER, START
     START = datetime.now()
     build_graph(case)
-    #print_graph()
     preprocessing()
-    #print_graph()
     
     MAX_ITER = (N * (N-1))//2
     best_i, best_path, best_elapsed, best_overused, best_total = vns(MAX_ITER * 5)
-    #calculate_path_cost_print(best_path)
-    optimal_path = load_expected(case) #[0, 14, 18, 13, 9, 5, 4, 6, 8, 7, 16, 19, 11, 17, 1, 10, 3, 12, 2, 15, 0]
-    optimal_elapsed, optimal_over, optimal_total = calculate_path_cost(optimal_path[1])
-    #print('optimal path {}, elapsed {:10.2f}, error {:10.2f}, total {:10.2f}, expected_total {:10.2f}'.format(optimal_path[1], optimal_elapsed, optimal_over, optimal_total, optimal_path[0]))
-    print('case: {}, solved: {}, optimal diff: {:4.2f}'.format(case, best_overused == 0.0, best_total - optimal_total))
-    if optimal_over > 0.0:
-        print('case {} impossible optimal'.format(case))
-    if optimal_total == best_total:
-        print('PERFECT')
-    if best_overused > 0.0:
-        print('IMPOSSIBLE')
+    end = datetime.now()
+    #optimal_path = load_expected(case)
+    #optimal_elapsed, optimal_over, optimal_total = calculate_path_cost(optimal_path[1])
+    if best_overused == 0.0:
+        print('{:20} | {:131} | {:20}'.format('case', 'path', 'cost'))
+        print('{:20} | {:131} | {:20}'.format(case, str(best_path)[1:-1], best_total))
+        #print('{} & ${}$ & ${:10.2f}$ & ${:10.2f}$ & ${:10.2f}$\\\\'.format(case.replace('_', '\\_'), N, (end - START).total_seconds(), best_total, best_total - optimal_total))
+    else:
+        print('no feasible solution found')
+        #print('{} & ${}$ & ${:10.2f}$ & {} & {}\\\\'.format(case.replace('_', '\\_'), N, (end - START).total_seconds(), 'no encontrado', 'no encontrado'))
+    #print('\hline')
     return best_overused == 0.0
 
 def solve_all():
@@ -274,45 +257,10 @@ def solve_all():
     print('not solved cases', not_solved, not_solved_cases)
 
 def main():
-    global N, MAX_ITER, TIMEOUT
+    global N, TIMEOUT
     TIMEOUT = int(sys.argv[1])
     case = sys.argv[2]
     #solve_all()
     solve_case(case)
-    #build_graph('rc_207.3')
-    #elapsed, overused, total = calculate_path_cost_print([0, 2, 5, 7, 9, 10, 11, 12, 13, 15, 26, 21, 27, 25, 30, 31, 22, 29, 18, 28, 3, 16, 4, 17, 1, 14, 6, 8, 19, 23, 20, 32, 24, 0])
-    #print(elapsed, overused, total)
-
-    '''build_graph(case)
-    #preprocessing()
-    path = build_greedy(0)
-    elapsed, overused, total = calculate_path_cost(path)
-    print('greedy seed path v {} {} elapsed {:10.2f}, error {:10.2f}, total {:10.2f}'.format(0, path, elapsed, overused, total))
-    adjust_path(path)'''
-
-    '''path = build_greedy(0)
-    elapsed, overused, total = calculate_path_cost(path)
-    print(path)
-    print(elapsed, overused, total)
-
-    optimal, optimal_over, optimal_total = calculate_path_cost([0, 14, 18, 13, 9, 5, 4, 6, 8, 7, 16, 19, 11, 17, 1, 10, 3, 12, 2, 15, 0])
-    new_path = two_opt(path)
-    print(new_path)
-    elapsed, overused, total = calculate_path_cost(new_path)
-    print(elapsed, overused, total)
-    print(optimal, optimal_over, optimal_total)'''
-
+    
 main()
-
-
-
-# P veces (se podría paralelizar)
-    # generar un path greedy
-    # X veces
-        # generar una variación de nivel Y del path ---------> ¿Cómo?
-        # si es mejor que el path anterior 
-            # reemplazar el path inicial y reiniciar el nivel de variación
-        # si no
-            # aumentar el nivel de variación
-    # entregar el mejor path encontrado
-# entregar el mejor path de los mejores
